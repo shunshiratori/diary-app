@@ -1,31 +1,60 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
+import {
+  collection,
+  doc,
+  getDocs,
+  getFirestore,
+  setDoc,
+} from "firebase/firestore/lite";
+import { initializeApp } from "firebase/app";
 
 function App() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const key = "diary";
+  // Your web app's Firebase configuration
+  const firebaseConfig = {
+    apiKey: import.meta.env.VITE_API_KEY,
+    authDomain: "diary-app-89c24.firebaseapp.com",
+    projectId: "diary-app-89c24",
+    storageBucket: "diary-app-89c24.firebasestorage.app",
+    messagingSenderId: "372711367790",
+    appId: "1:372711367790:web:fad837c11947ba7bcef27f",
+  };
 
-  const saveContent = () => {
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const saveContent = async () => {
     if (!window.localStorage) {
       alert("このブラウザはlocalStorageに対応していません");
     } else {
-      const diaryData = JSON.parse(localStorage.getItem(key) || "{}");
-      // const today = new Date().toISOString().split("T")[0];
-      const today = new Date().toISOString();
-      diaryData[today] = {
+      const now = new Date();
+      now.setHours(now.getHours() + 9); // UTC → JST に変換
+      const today = now.toISOString().split("T")[0];
+      await setDoc(doc(db, "diary", today), {
         title: title,
         content: content,
-      };
-      localStorage.setItem(key, JSON.stringify(diaryData));
+      });
     }
 
     setTitle("");
     setContent("");
   };
 
-  const diarys = JSON.parse(localStorage.getItem(key) || "{}");
-  console.log(diarys);
+  const [diarys, setDiarys] = useState<any[]>([]);
+
+  useEffect(() => {
+    getDocs(collection(db, "diary")).then((snapshot) => {
+      const data = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setDiarys(data);
+    });
+  }, []);
 
   return (
     <>
@@ -71,7 +100,7 @@ function App() {
                 key={key}
                 className="w-full max-w-3xl mx-auto p-5 border rounded-lg border-gray-200 shadow-sm"
               >
-                <p className="mb-2 text-gray-500">{key}</p>
+                <p className="mb-2 text-gray-500">{value.id}</p>
                 <p className="mb-4 font-bold text-xl">{value.title}</p>
                 <p>{value.content}</p>
               </article>
