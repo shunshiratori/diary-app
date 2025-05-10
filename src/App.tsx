@@ -1,7 +1,7 @@
 import "./App.css";
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-import { Diary } from "./components/diary";
+import { Diary } from "./components/Diary";
 
 function App() {
   const firebaseConfig = {
