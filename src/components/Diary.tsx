@@ -48,7 +48,9 @@ export const Diary = ({ db }: Props) => {
         <h1 className="text-center text-5xl text-red-700 font-bold">
           簡単日記アプリ
         </h1>
-        <p>毎日の思いを1日1回だけ記録できます。</p>
+        <p className="text-center text-xl mt-2 text-gray-500">
+          毎日の思いを1日1回だけ記録できます。
+        </p>
 
         {/* フォーム */}
         <div className="border rounded-lg border-gray-200 shadow-sm max-w-md mt-12 m-auto p-5">
