@@ -1,25 +1,45 @@
 import { useEffect, useState } from "react";
 import { saveContent } from "../logic/savaContent";
-import { collection, getDocs, orderBy, query } from "firebase/firestore";
+import {
+  collection,
+  Firestore,
+  onSnapshot,
+  orderBy,
+  query,
+} from "firebase/firestore";
 
-export const Diary = ({ db }) => {
+type Props = {
+  db: Firestore;
+};
+type Diary = {
+  id: string;
+  title: string;
+  content: string;
+  createdAt: Date;
+};
+
+export const Diary = ({ db }: Props) => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const key = "diary";
-  const [diarys, setDiarys] = useState<any[]>([]);
+  const [diarys, setDiarys] = useState<Diary[]>([]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      const q = query(collection(db, key), orderBy("createdAt", "desc"));
-      const snapshot = await getDocs(q);
-      const data = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+    const q = query(collection(db, key), orderBy("createdAt", "desc"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data: Diary[] = snapshot.docs.map((doc) => {
+        const d = doc.data();
+        return {
+          id: doc.id,
+          title: d.title,
+          content: d.content,
+          createdAt: d.createdAt.toDate(),
+        };
+      });
       setDiarys(data);
-    };
+    });
 
-    fetchData();
+    return () => unsubscribe();
   }, [db]);
 
   return (
@@ -50,7 +70,7 @@ export const Diary = ({ db }) => {
           ></textarea>
           <button
             onClick={() =>
-              saveContent(db, key, title, setTitle, content, setContent)
+              saveContent({ db, key, title, setTitle, content, setContent })
             }
             className="mt-4 bg-gray-600 text-white p-2 rounded-lg hover:bg-gray-700 transition grid mx-auto cursor-pointer"
           >

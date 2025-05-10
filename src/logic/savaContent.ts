@@ -5,16 +5,20 @@ import {
   setDoc,
   orderBy,
   query,
+  Firestore,
 } from "firebase/firestore";
 
-export const saveContent = async (
-  db,
-  key,
-  title,
-  setTitle,
-  content,
-  setContent
-) => {
+type Props = {
+  db: Firestore;
+  key: string;
+  title: string;
+  setTitle: (title: string) => void;
+  content: string;
+  setContent: (content: string) => void;
+};
+
+export const saveContent = async (props: Props) => {
+  const { db, key, title, setTitle, content, setContent } = props;
   const now = new Date();
   now.setHours(now.getHours() + 9); // JSTに変換
   const todayStr = now.toISOString().slice(0, 10);
@@ -34,10 +38,10 @@ export const saveContent = async (
     return entryStr === todayStr;
   });
 
-  // if (hasPostedToday) {
-  //   alert("今日はすでに投稿済みです。");
-  //   return;
-  // }
+  if (hasPostedToday) {
+    alert("今日はすでに投稿済みです。");
+    return;
+  }
 
   const today = new Date().toISOString().split("T")[0];
   await setDoc(doc(db, key, today), {
