@@ -6,14 +6,16 @@ import {
   getDocs,
   getFirestore,
   setDoc,
-} from "firebase/firestore/lite";
+  orderBy,
+  query,
+} from "firebase/firestore";
 import { initializeApp } from "firebase/app";
 
 function App() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const key = "diary";
-  // Your web app's Firebase configuration
+
   const firebaseConfig = {
     apiKey: import.meta.env.VITE_API_KEY,
     authDomain: "diary-app-89c24.firebaseapp.com",
@@ -23,38 +25,59 @@ function App() {
     appId: "1:372711367790:web:fad837c11947ba7bcef27f",
   };
 
-  // Initialize Firebase
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
-
-  const saveContent = async () => {
-    if (!window.localStorage) {
-      alert("このブラウザはlocalStorageに対応していません");
-    } else {
-      const now = new Date();
-      now.setHours(now.getHours() + 9); // UTC → JST に変換
-      const today = now.toISOString().split("T")[0];
-      await setDoc(doc(db, "diary", today), {
-        title: title,
-        content: content,
-      });
-    }
-
-    setTitle("");
-    setContent("");
-  };
 
   const [diarys, setDiarys] = useState<any[]>([]);
 
   useEffect(() => {
-    getDocs(collection(db, "diary")).then((snapshot) => {
+    const fetchData = async () => {
+      const q = query(collection(db, key), orderBy("createdAt", "desc"));
+      const snapshot = await getDocs(q);
       const data = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
       setDiarys(data);
+    };
+
+    fetchData();
+  }, [db]);
+
+  const saveContent = async () => {
+    const now = new Date();
+    now.setHours(now.getHours() + 9); // JSTに変換
+    const todayStr = now.toISOString().slice(0, 10);
+
+    // Firestoreの全投稿を取得して今日の投稿があるかチェック
+    const q = query(collection(db, key), orderBy("createdAt", "desc"));
+    const snapshot = await getDocs(q);
+
+    const hasPostedToday = snapshot.docs.some((doc) => {
+      const data = doc.data();
+      if (!data.createdAt) return false;
+
+      const createdAt = new Date(data.createdAt.seconds * 1000);
+      createdAt.setHours(createdAt.getHours() + 9);
+      const entryStr = createdAt.toISOString().slice(0, 10);
+
+      return entryStr === todayStr;
     });
-  }, []);
+
+    if (hasPostedToday) {
+      alert("今日はすでに投稿済みです。");
+      return;
+    }
+
+    await setDoc(doc(db, key), {
+      title: title,
+      content: content,
+      createdAt: new Date(),
+    });
+
+    setTitle("");
+    setContent("");
+  };
 
   return (
     <>
@@ -95,14 +118,14 @@ function App() {
           <h2 className="font-bold text-3xl text-center">日記一覧</h2>
 
           <div className="grid gap-5 mt-5">
-            {Object.entries(diarys).map(([key, value]) => (
+            {diarys.map((item) => (
               <article
-                key={key}
+                key={item.id}
                 className="w-full max-w-3xl mx-auto p-5 border rounded-lg border-gray-200 shadow-sm"
               >
-                <p className="mb-2 text-gray-500">{value.id}</p>
-                <p className="mb-4 font-bold text-xl">{value.title}</p>
-                <p>{value.content}</p>
+                <p className="mb-2 text-gray-500">{item.id}</p>
+                <p className="mb-4 font-bold text-xl">{item.title}</p>
+                <p>{item.content}</p>
               </article>
             ))}
           </div>
