@@ -1,3 +1,4 @@
+import { key } from "./../components/Diary";
 import {
   collection,
   doc,
@@ -10,31 +11,22 @@ import {
 
 type Props = {
   db: Firestore;
-  key: string;
   title: string;
   setTitle: (title: string) => void;
   content: string;
   setContent: (content: string) => void;
-  isEditingId?: string | null;
-  setIsEditingId?: (isEditing: string | null) => void;
+  editingId?: string | null;
+  setEditingId?: (isEditing: string | null) => void;
 };
 
 export const saveContent = async (props: Props) => {
-  const {
-    db,
-    key,
-    title,
-    setTitle,
-    content,
-    setContent,
-    isEditingId,
-    setIsEditingId,
-  } = props;
+  const { db, title, setTitle, content, setContent, editingId, setEditingId } =
+    props;
   const now = new Date();
   now.setHours(now.getHours() + 9); // JSTに変換
   const todayStr = now.toISOString().slice(0, 10);
 
-  // Firestoreの全投稿を取得して今日の投稿があるかチェック
+  // Firestoreのデータを取得して今日の投稿があるかチェック
   const q = query(collection(db, key), orderBy("createdAt", "desc"));
   const snapshot = await getDocs(q);
   const hasPostedToday = snapshot.docs.some((doc) => {
@@ -48,7 +40,7 @@ export const saveContent = async (props: Props) => {
     return entryStr === todayStr;
   });
 
-  if (hasPostedToday && isEditingId === null) {
+  if (hasPostedToday && editingId === null) {
     alert("今日はすでに投稿済みです。");
     return;
   } else {
@@ -59,8 +51,8 @@ export const saveContent = async (props: Props) => {
       createdAt: new Date(),
     });
   }
-  if (isEditingId && setIsEditingId) {
-    setIsEditingId(null);
+  if (editingId && setEditingId) {
+    setEditingId(null);
   }
 
   setTitle("");
