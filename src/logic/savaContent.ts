@@ -15,10 +15,21 @@ type Props = {
   setTitle: (title: string) => void;
   content: string;
   setContent: (content: string) => void;
+  isEditingId?: string | null;
+  setIsEditingId?: (isEditing: string | null) => void;
 };
 
 export const saveContent = async (props: Props) => {
-  const { db, key, title, setTitle, content, setContent } = props;
+  const {
+    db,
+    key,
+    title,
+    setTitle,
+    content,
+    setContent,
+    isEditingId,
+    setIsEditingId,
+  } = props;
   const now = new Date();
   now.setHours(now.getHours() + 9); // JSTに変換
   const todayStr = now.toISOString().slice(0, 10);
@@ -26,7 +37,6 @@ export const saveContent = async (props: Props) => {
   // Firestoreの全投稿を取得して今日の投稿があるかチェック
   const q = query(collection(db, key), orderBy("createdAt", "desc"));
   const snapshot = await getDocs(q);
-
   const hasPostedToday = snapshot.docs.some((doc) => {
     const data = doc.data();
     if (!data.createdAt) return false;
@@ -38,17 +48,20 @@ export const saveContent = async (props: Props) => {
     return entryStr === todayStr;
   });
 
-  if (hasPostedToday) {
+  if (hasPostedToday && isEditingId === null) {
     alert("今日はすでに投稿済みです。");
     return;
+  } else {
+    const today = new Date().toISOString().split("T")[0];
+    await setDoc(doc(db, key, today), {
+      title: title,
+      content: content,
+      createdAt: new Date(),
+    });
   }
-
-  const today = new Date().toISOString().split("T")[0];
-  await setDoc(doc(db, key, today), {
-    title: title,
-    content: content,
-    createdAt: new Date(),
-  });
+  if (isEditingId && setIsEditingId) {
+    setIsEditingId(null);
+  }
 
   setTitle("");
   setContent("");

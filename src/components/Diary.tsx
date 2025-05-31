@@ -7,10 +7,12 @@ import {
   orderBy,
   query,
 } from "firebase/firestore";
+import { deleteContent } from "../logic/deleteContent";
 
 type Props = {
   db: Firestore;
 };
+
 type Diary = {
   id: string;
   title: string;
@@ -23,6 +25,7 @@ export const Diary = ({ db }: Props) => {
   const [content, setContent] = useState("");
   const key = "diary";
   const [diarys, setDiarys] = useState<Diary[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
     const q = query(collection(db, key), orderBy("createdAt", "desc"));
@@ -41,6 +44,12 @@ export const Diary = ({ db }: Props) => {
 
     return () => unsubscribe();
   }, [db]);
+
+  const editContent = (item: Diary) => () => {
+    setEditingId(item.id);
+    setTitle(item.title);
+    setContent(item.content);
+  };
 
   return (
     <>
@@ -72,9 +81,16 @@ export const Diary = ({ db }: Props) => {
             className="border border-gray-200 rounded-lg w-full p-2"
           ></textarea>
           <button
-            onClick={() =>
-              saveContent({ db, key, title, setTitle, content, setContent })
-            }
+            onClick={() => {
+              saveContent({
+                db,
+                key,
+                title,
+                setTitle,
+                content,
+                setContent,
+              });
+            }}
             className="mt-4 bg-gray-600 text-white p-2 rounded-lg hover:bg-gray-700 transition grid mx-auto cursor-pointer"
           >
             保存する
@@ -91,9 +107,74 @@ export const Diary = ({ db }: Props) => {
                 key={item.id}
                 className="w-full max-w-3xl mx-auto p-5 border rounded-lg border-gray-200 shadow-sm"
               >
-                <p className="mb-2 text-gray-500">{item.id}</p>
-                <p className="mb-4 font-bold text-xl">{item.title}</p>
-                <p>{item.content}</p>
+                {editingId === item.id ? (
+                  <>
+                    <input
+                      type="text"
+                      name="update-title"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      placeholder="タイトル"
+                      className="border border-gray-200 rounded-lg mb-5 w-full p-2"
+                    />
+                    <textarea
+                      name="update-content"
+                      value={content}
+                      onChange={(e) => setContent(e.target.value)}
+                      placeholder="内容"
+                      className="border border-gray-200 rounded-lg w-full p-2"
+                    ></textarea>
+                    <div className="flex items-center justify-start mt-4 gap-3">
+                      <button
+                        className="bg-gray-600 text-white p-2 rounded-lg hover:bg-gray-700 transition grid cursor-pointer text-sm"
+                        onClick={() => {
+                          saveContent({
+                            db,
+                            key,
+                            title,
+                            setTitle,
+                            content,
+                            setContent,
+                            isEditingId: editingId,
+                            setIsEditingId: setEditingId,
+                          });
+                        }}
+                      >
+                        更新する
+                      </button>
+                      <button
+                        className="bg-gray-600 text-white p-2 rounded-lg hover:bg-gray-700 transition grid cursor-pointer text-sm"
+                        onClick={() => {
+                          setEditingId(null);
+                          setTitle("");
+                          setContent("");
+                        }}
+                      >
+                        キャンセル
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="mb-2 text-gray-500">{item.id}</p>
+                    <p className="mb-4 font-bold text-xl">{item.title}</p>
+                    <p>{item.content}</p>
+                    <div className="flex gap-3">
+                      <button
+                        className="mt-4 bg-gray-600 text-white p-2 rounded-lg hover:bg-gray-700 transition grid cursor-pointer text-sm"
+                        onClick={editContent(item)}
+                      >
+                        編集する
+                      </button>
+                      <button
+                        className="mt-4 bg-gray-600 text-white p-2 rounded-lg hover:bg-gray-700 transition grid cursor-pointer text-sm"
+                        onClick={() => deleteContent({ db, key, id: item.id })}
+                      >
+                        削除する
+                      </button>
+                    </div>
+                  </>
+                )}
               </article>
             ))}
           </div>
