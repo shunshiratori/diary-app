@@ -8,11 +8,14 @@ import {
 } from "firebase/firestore";
 import { Form } from "./Form";
 import { Contents } from "./Contents";
+import { auth } from "../App";
+import { signOut } from "firebase/auth";
 
 type Props = {
   db: Firestore;
 };
-export type Diary = {
+
+export type DiaryProps = {
   id: string;
   title: string;
   content: string;
@@ -25,13 +28,13 @@ export const Diary = ({ db }: Props) => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [isForm, setIsForm] = useState(false);
-  const [diarys, setDiarys] = useState<Diary[]>([]);
+  const [diarys, setDiarys] = useState<DiaryProps[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
     const q = query(collection(db, key), orderBy("createdAt", "desc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data: Diary[] = snapshot.docs.map((doc) => {
+      const data: DiaryProps[] = snapshot.docs.map((doc) => {
         const d = doc.data();
         return {
           id: doc.id,
@@ -54,6 +57,14 @@ export const Diary = ({ db }: Props) => {
         <p className="text-center text-xl mt-2 text-gray-500">
           毎日の思いを1日1回だけ記録できます。
         </p>
+        <button
+          className="mt-4 rounded-lg transition grid mx-auto cursor-pointer"
+          onClick={() => {
+            signOut(auth);
+          }}
+        >
+          log out
+        </button>
 
         {!isForm ? (
           <>

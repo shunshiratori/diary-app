@@ -1,7 +1,7 @@
 import { Firestore } from "firebase/firestore";
 import { saveContent } from "../logic/savaContent";
 import { deleteContent } from "../logic/deleteContent";
-import { Diary } from "./Diary";
+import { DiaryProps } from "./Diary";
 
 type Props = {
   db: Firestore;
@@ -9,7 +9,7 @@ type Props = {
   setTitle: (title: string) => void;
   content: string;
   setContent: (content: string) => void;
-  diarys: Diary[];
+  diarys: DiaryProps[];
   editingId: string | null;
   setEditingId: (isEditing: string | null) => void;
 };
