@@ -5,6 +5,7 @@ import {
   onSnapshot,
   orderBy,
   query,
+  where,
 } from "firebase/firestore";
 import { Form } from "./Form";
 import { Contents } from "./Contents";
@@ -32,7 +33,14 @@ export const Diary = ({ db }: Props) => {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
-    const q = query(collection(db, key), orderBy("createdAt", "desc"));
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
+
+    const q = query(
+      collection(db, key),
+      where("userId", "==", uid),
+      orderBy("createdAt", "desc")
+    );
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data: DiaryProps[] = snapshot.docs.map((doc) => {
         const d = doc.data();
@@ -63,7 +71,8 @@ export const Diary = ({ db }: Props) => {
             signOut(auth);
           }}
         >
-          log out
+          log out(
+          {auth.currentUser?.email})
         </button>
 
         {!isForm ? (

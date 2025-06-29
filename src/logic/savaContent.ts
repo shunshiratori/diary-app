@@ -1,3 +1,4 @@
+import { auth } from "../App";
 import { key } from "./../components/Diary";
 import {
   collection,
@@ -7,6 +8,7 @@ import {
   orderBy,
   query,
   Firestore,
+  where,
 } from "firebase/firestore";
 
 type Props = {
@@ -25,9 +27,15 @@ export const saveContent = async (props: Props) => {
   const now = new Date();
   now.setHours(now.getHours() + 9); // JSTに変換
   const todayStr = now.toISOString().slice(0, 10);
+  const uid = auth.currentUser?.uid;
+  if (!uid) throw new Error("ログイン状態ではありません");
 
   // Firestoreのデータを取得して今日の投稿があるかチェック
-  const q = query(collection(db, key), orderBy("createdAt", "desc"));
+  const q = query(
+    collection(db, key),
+    where("userId", "==", uid),
+    orderBy("createdAt", "desc")
+  );
   const snapshot = await getDocs(q);
   const hasPostedToday = snapshot.docs.some((doc) => {
     const data = doc.data();
@@ -48,6 +56,7 @@ export const saveContent = async (props: Props) => {
     await setDoc(doc(db, key, today), {
       title: title,
       content: content,
+      userId: uid,
       createdAt: new Date(),
     });
   }
