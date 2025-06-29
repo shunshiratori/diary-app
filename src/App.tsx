@@ -7,7 +7,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_API_KEY,
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: "diary-app-89c24.firebaseapp.com",
   projectId: "diary-app-89c24",
   storageBucket: "diary-app-89c24.firebasestorage.app",
